@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import EnrollButton from "@/components/courses/EnrollButton";
+import ReviewForm from "@/components/courses/ReviewForm";
 import { formatRupiah, formatDuration } from "@/lib/utils";
 import {
   Star,
@@ -79,6 +80,8 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
     });
     isEnrolled = !!enrollment;
   }
+
+  const userReview = user ? course.reviews.find((r) => r.userId === user.id) : null;
 
   // Calculate total lessons and duration
   const allLessons = course.sections.flatMap((s) => s.lessons);
@@ -350,6 +353,17 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                   </p>
                 )}
               </div>
+
+              {/* Student Review Submission Form */}
+              <ReviewForm
+                courseId={course.id}
+                isEnrolled={isEnrolled}
+                userReview={
+                  userReview
+                    ? { rating: userReview.rating, comment: userReview.comment }
+                    : null
+                }
+              />
             </div>
           </div>
 
