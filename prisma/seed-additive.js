@@ -89,6 +89,7 @@ async function main() {
   if (!instructor || (instructor.role !== "PENGAJAR" && instructor.role !== "ADMIN")) {
     throw new Error("Profil pengajar demo tidak ditemukan. Seed dihentikan tanpa mengubah data.");
   }
+  const adminProfile = await prisma.user.findUnique({ where: { email: "admin@coursera-clone.com" } });
 
   const categories = {};
   for (const [slug, name] of [
@@ -121,21 +122,27 @@ async function main() {
 
   let linkedAuthUsers = 0;
   if (authAdmin) {
-    for (const [index, fixture] of studentFixtures.entries()) {
-      let authUser = authUsers.find((candidate) => candidate.email?.toLowerCase() === fixture.email.toLowerCase());
+    const authFixtures = [
+      ...(adminProfile ? [{ profile: adminProfile, password: "admin123" }] : []),
+      { profile: instructor, password: "pengajar123" },
+      ...students.map((profile) => ({ profile, password: "murid123" })),
+    ];
+    for (const [index, fixture] of authFixtures.entries()) {
+      const { profile, password } = fixture;
+      let authUser = authUsers.find((candidate) => candidate.email?.toLowerCase() === profile.email.toLowerCase());
       if (!authUser) {
         const created = await authAdmin.auth.admin.createUser({
-          email: fixture.email,
-          password: "murid123",
+          email: profile.email,
+          password,
           email_confirm: true,
-          user_metadata: { full_name: fixture.name, role: "MURID" },
+          user_metadata: { full_name: profile.name, role: profile.role },
         });
         if (created.error) throw new Error(`Failed to create demo Auth account ${index + 1}: ${created.error.message}`);
         authUser = created.data.user;
         authUsers.push(authUser);
       }
       if (authUser.email_confirmed_at) {
-        await prisma.user.update({ where: { email: fixture.email }, data: { authUserId: authUser.id } });
+        await prisma.user.update({ where: { id: profile.id }, data: { authUserId: authUser.id } });
         linkedAuthUsers++;
       }
     }
