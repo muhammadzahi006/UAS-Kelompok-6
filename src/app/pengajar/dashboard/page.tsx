@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import PushNotificationButton from "@/components/notifications/PushNotificationButton";
 import { formatRupiah } from "@/lib/utils";
 import {
   BookOpen,
@@ -80,13 +81,16 @@ export default async function PengajarDashboardPage() {
             </div>
           </div>
 
-          <Link
-            href="/pengajar/courses/create"
-            className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm rounded-xl shadow-sm transition-all flex items-center gap-2"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>Buat Kursus Baru</span>
-          </Link>
+          <div className="flex flex-col items-start md:items-end gap-3">
+            <PushNotificationButton />
+            <Link
+              href="/pengajar/courses/create"
+              className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm rounded-xl shadow-sm transition-all flex items-center gap-2"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Buat Kursus Baru</span>
+            </Link>
+          </div>
         </div>
 
         {/* Analytics Summary */}
