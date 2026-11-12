@@ -10,7 +10,8 @@
     "generate:vapid": "node scripts/generate-vapid-keys.js",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "seed": "node --env-file=.env prisma/seed.js"
+    "seed": "node --env-file=.env prisma/seed.js",
+    "seed:additive": "node --env-file=.env prisma/seed-additive.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1165.0",
