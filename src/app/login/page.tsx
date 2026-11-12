@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useState, Suspense } from "react";
-import { signIn } from "next-auth/react";
+import { createClient } from "@/lib/supabase/browser";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { GraduationCap, Lock, Mail, ArrowRight, UserCheck, AlertCircle } from "lucide-react";
+import { GraduationCap, Lock, Mail, ArrowRight, AlertCircle } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
@@ -15,6 +15,7 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const supabase = createClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,29 +23,16 @@ function LoginForm() {
     setErrorMessage("");
 
     try {
-      const res = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (res?.error) {
-        setErrorMessage(res.error);
-      } else {
-        router.push(callbackUrl);
-        router.refresh();
-      }
-    } catch (err: any) {
-      setErrorMessage("Terjadi kesalahan saat masuk. Coba lagi.");
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      await fetch("/api/auth/profile", { cache: "no-store" });
+      router.push(callbackUrl);
+      router.refresh();
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : "Terjadi kesalahan saat masuk. Coba lagi.");
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const fillQuickDemo = (roleEmail: string, rolePass: string) => {
-    setEmail(roleEmail);
-    setPassword(rolePass);
-    setErrorMessage("");
   };
 
   return (
@@ -61,37 +49,9 @@ function LoginForm() {
         </p>
       </div>
 
-      {/* Quick Demo Role Selector */}
-      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
-        <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-          <UserCheck className="w-3.5 h-3.5 text-brand-500" />
-          <span>Akun Demo Cepat (Klik untuk Mengisi):</span>
-        </p>
-        <div className="grid grid-cols-3 gap-2">
-          <button
-            type="button"
-            onClick={() => fillQuickDemo("admin@coursera-clone.com", "admin123")}
-            className="py-1.5 px-2 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold rounded-lg border border-purple-200 transition-colors flex items-center justify-center gap-1"
-          >
-            👑 Admin
-          </button>
-          <button
-            type="button"
-            onClick={() => fillQuickDemo("pengajar@coursera-clone.com", "pengajar123")}
-            className="py-1.5 px-2 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold rounded-lg border border-amber-200 transition-colors flex items-center justify-center gap-1"
-          >
-            🎓 Pengajar
-          </button>
-          <button
-            type="button"
-            onClick={() => fillQuickDemo("murid@coursera-clone.com", "murid123")}
-            className="py-1.5 px-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg border border-blue-200 transition-colors flex items-center justify-center gap-1"
-          >
-            🎒 Murid
-          </button>
-        </div>
+      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 text-sm text-slate-600">
+        Masuk menggunakan akun Supabase Auth yang sudah terdaftar dan terverifikasi.
       </div>
-
       {errorMessage && (
         <div className="flex items-center gap-2 p-3.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl">
           <AlertCircle className="w-4 h-4 shrink-0" />
@@ -128,7 +88,7 @@ function LoginForm() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
               className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
             />
           </div>

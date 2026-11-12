@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/browser";
 import { GraduationCap, Lock, Mail, User, BookOpen, Presentation, AlertCircle, CheckCircle2, ArrowRight } from "lucide-react";
 
 function RegisterForm() {
@@ -17,6 +18,7 @@ function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const supabase = createClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,24 +27,26 @@ function RegisterForm() {
     setSuccessMessage("");
 
     try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role }),
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: name, role }, emailRedirectTo: `${window.location.origin}/login` },
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setErrorMessage(data.error || "Gagal membuat akun.");
+      if (error) throw error;
+      if (data.session) {
+        const profileResponse = await fetch("/api/auth/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, role }),
+        });
+        if (!profileResponse.ok) throw new Error((await profileResponse.json()).error || "Profil gagal dibuat.");
+        setSuccessMessage("Akun berhasil dibuat. Mengalihkan ke halaman utama...");
+        setTimeout(() => router.push("/"), 1000);
       } else {
-        setSuccessMessage("Pendaftaran berhasil! Mengalihkan ke halaman masuk...");
-        setTimeout(() => {
-          router.push(`/login?email=${encodeURIComponent(email)}`);
-        }, 1500);
+        setSuccessMessage("Pendaftaran berhasil. Periksa email untuk verifikasi, lalu masuk untuk mengaktifkan profil.");
       }
-    } catch (err: any) {
-      setErrorMessage("Terjadi kesalahan pada server. Coba lagi.");
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : "Terjadi kesalahan saat membuat akun.");
     } finally {
       setIsLoading(false);
     }

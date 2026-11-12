@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { PlayCircle, ArrowRight, Loader2 } from "lucide-react";
 
 interface EnrollButtonProps {
@@ -16,13 +16,13 @@ export default function EnrollButton({
   isEnrolled,
   price,
 }: EnrollButtonProps) {
-  const { data: session } = useSession();
+  const { user } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [statusText, setStatusText] = useState("");
 
   const handleEnroll = async () => {
-    if (!session) {
+    if (!user) {
       router.push(`/login?callbackUrl=/courses`);
       return;
     }

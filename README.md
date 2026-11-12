@@ -53,7 +53,7 @@ Saat berada di halaman `/login`, tersedia tombol jalan pintas satu klik untuk me
 - **Framework Web**: [Next.js 14](https://nextjs.org/) (App Router, Server Components, Server Actions, TypeScript)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/) & [Lucide React Icons](https://lucide.dev/)
 - **Database & ORM**: PostgreSQL via [Supabase](https://supabase.com/) & [Prisma ORM](https://www.prisma.io/)
-- **Autentikasi**: [NextAuth.js](https://next-auth.js.org/) (Role-based JWT session, Bcrypt password hashing)
+- **Autentikasi**: [Supabase Auth](https://supabase.com/docs/guides/auth) (sesi cookie SSR dan role dari profil database)
 - **Penyimpanan Berkas/Aset**: [Cloudflare R2](https://www.cloudflare.com/products/r2/) (S3-compatible, Zero Egress Fees)
 - **Deployment Platform**: [Vercel](https://vercel.com/)
 
@@ -72,8 +72,11 @@ Buka `.env` dan masukkan connection string database Supabase Anda:
 ```env
 DATABASE_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?pgbouncer=true"
 DIRECT_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:5432/postgres"
-NEXTAUTH_SECRET="coursera_secret_key_change_me_in_production_jwt_token_2026"
-NEXTAUTH_URL="http://localhost:3000"
+NEXT_PUBLIC_SUPABASE_URL="https://YOUR-PROJECT-REF.supabase.co"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="sb_publishable_your_key"
+NEXT_PUBLIC_VAPID_PUBLIC_KEY="your_vapid_public_key"
+VAPID_PRIVATE_KEY="your_vapid_private_key"
+VAPID_SUBJECT="mailto:admin@example.com"
 ```
 
 ### 3. Migrasi & Seed Database
@@ -126,11 +129,23 @@ Buka browser di [http://localhost:3000](http://localhost:3000).
 4. Di bagian **Environment Variables**, tambahkan:
    - `DATABASE_URL` = Connection string Supabase (Port 6543)
    - `DIRECT_URL` = Connection string Supabase (Port 5432)
-   - `NEXTAUTH_SECRET` = String acak 32 karakter
-   - `NEXTAUTH_URL` = `https://[nama-project-anda].vercel.app`
+   - `NEXT_PUBLIC_SUPABASE_URL` = URL project Supabase
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` = publishable key project Supabase
+   - `NEXT_PUBLIC_VAPID_PUBLIC_KEY` dan `VAPID_PRIVATE_KEY` = pasangan VAPID
+   - `VAPID_SUBJECT` = alamat kontak pemilik aplikasi
    - `R2_ACCOUNT_ID` = Cloudflare Account ID
    - `R2_ACCESS_KEY_ID` = Cloudflare R2 Access Key
    - `R2_SECRET_ACCESS_KEY` = Cloudflare R2 Secret Key
    - `R2_BUCKET_NAME` = Nama bucket R2
    - `R2_PUBLIC_DOMAIN` = Domain publik bucket R2
 5. Klik **Deploy**! Vercel akan otomatis menjalankan `prisma generate` dan `next build`.
+
+### Supabase Auth dan worker notifikasi
+
+- Proyek database untuk UAS ini: `UAS-Kelompok-6`. Schema RLS dan constraint ada di `supabase/migrations/`.
+- Saat pengguna lama mendaftar di Supabase Auth dengan email yang sama, profil dan relasi belajarnya ditautkan setelah email terverifikasi.
+- Aktifkan konfirmasi email di Supabase Auth bila diperlukan; setelah konfirmasi, pengguna harus masuk sekali agar profil aplikasi ditautkan.
+- Web Push memerlukan HTTPS (localhost diperbolehkan untuk pengembangan). Buat/simpan VAPID keys lokal dengan `npm run generate:vapid`; jangan commit `VAPID_PRIVATE_KEY`.
+- Jalankan `npm run worker` pada proses server terpisah yang selalu hidup. Worker membaca `NotificationQueue` dan mengirim push dengan retry; worker perlu database connection string dan VAPID private key.
+- Deployment Vercel menangani aplikasi web. Jalankan worker pada host proses persisten karena worker polling tidak dapat bergantung pada proses request Vercel.
+- `npm run seed` sengaja menolak berjalan tanpa `SEED_ALLOW_DESTRUCTIVE_RESET=true`, karena seed demo saat ini menghapus data bisnis. Seed juga memerlukan `SUPABASE_SERVICE_ROLE_KEY` untuk membuat akun demo Auth; jangan commit key tersebut.

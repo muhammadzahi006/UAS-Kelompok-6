@@ -10,6 +10,7 @@ import {
   PlusCircle,
   Layers,
   Eye,
+  ClipboardList,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -58,7 +59,7 @@ export default async function PengajarDashboardPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={
-                user.image ||
+                user.avatar ||
                 `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`
               }
               alt={user.name || "Pengajar"}
@@ -194,7 +195,15 @@ export default async function PengajarDashboardPage() {
                         className="px-4 py-2 bg-brand-50 text-brand-600 hover:bg-brand-100 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
                       >
                         <Layers className="w-4 h-4" />
-                        <span>Kelola Kurikulum</span>
+                        <span>Kurikulum</span>
+                      </Link>
+
+                      <Link
+                        href={`/pengajar/courses/${course.id}/quizzes`}
+                        className="px-4 py-2 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
+                      >
+                        <ClipboardList className="w-4 h-4" />
+                        <span>Kuis</span>
                       </Link>
                     </div>
                   </div>

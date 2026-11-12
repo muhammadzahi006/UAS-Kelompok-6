@@ -1,90 +1,45 @@
-import { NextAuthOptions, getServerSession } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
-import prisma from "@/lib/prisma";
 import { Role } from "@prisma/client";
+import prisma from "@/lib/prisma";
+import { createClient } from "@/lib/supabase/server";
 
-export const authOptions: NextAuthOptions = {
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-  pages: {
-    signIn: "/login",
-    error: "/login",
-  },
-  providers: [
-    CredentialsProvider({
-      name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "email", placeholder: "user@example.com" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email dan password wajib diisi");
-        }
+export async function syncProfile(authUser: {
+  id: string;
+  email?: string;
+  email_confirmed_at?: string;
+  user_metadata?: Record<string, unknown>;
+}) {
+  if (!authUser.email || !authUser.email_confirmed_at) return null;
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email.toLowerCase().trim(),
-          },
-        });
+  const existing = await prisma.user.findUnique({ where: { email: authUser.email } });
+  if (existing) {
+    if (existing.authUserId && existing.authUserId !== authUser.id) return null;
+    return prisma.user.update({
+      where: { id: existing.id },
+      data: { authUserId: authUser.id },
+    });
+  }
 
-        if (!user || !user.password) {
-          throw new Error("Akun dengan email ini tidak ditemukan");
-        }
+  const metadata = authUser.user_metadata ?? {};
+  const requestedRole = metadata.role === "PENGAJAR" ? Role.PENGAJAR : Role.MURID;
+  const name = typeof metadata.full_name === "string" ? metadata.full_name.trim() : "";
+  if (!name) return null;
 
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-
-        if (!isPasswordValid) {
-          throw new Error("Password yang Anda masukkan salah");
-        }
-
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          image: user.avatar,
-          role: user.role,
-        };
-      },
-    }),
-  ],
-  callbacks: {
-    async jwt({ token, user, trigger, session }) {
-      if (user) {
-        token.id = user.id;
-        token.role = user.role;
-        token.avatar = user.avatar;
-      }
-
-      if (trigger === "update" && session) {
-        if (session.name) token.name = session.name;
-        if (session.avatar) token.avatar = session.avatar;
-      }
-
-      return token;
+  return prisma.user.upsert({
+    where: { authUserId: authUser.id },
+    update: {},
+    create: {
+      authUserId: authUser.id,
+      name,
+      email: authUser.email.toLowerCase(),
+      role: requestedRole,
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
     },
-    async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as Role;
-        if (token.avatar) {
-          session.user.image = token.avatar as string;
-        }
-      }
-      return session;
-    },
-  },
-  secret: process.env.NEXTAUTH_SECRET || "fallback_coursera_jwt_secret_dev",
-};
-
-export async function getCurrentUser() {
-  const session = await getServerSession(authOptions);
-  return session?.user;
+  });
 }
 
+export async function getCurrentUser() {
+  const supabase = createClient();
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user?.email) return null;
+  return syncProfile(data.user);
+}

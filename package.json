@@ -6,28 +6,34 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "worker": "node --env-file=.env scripts/notification-worker.js",
+    "generate:vapid": "node scripts/generate-vapid-keys.js",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "seed": "node prisma/seed.js"
+    "seed": "node --env-file=.env prisma/seed.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1165.0",
     "@aws-sdk/s3-request-presigner": "^3.1165.0",
     "@prisma/client": "^5.22.0",
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.119.0",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "lucide-react": "^1.71.0",
     "next": "14.2.35",
-    "next-auth": "^4.24.15",
     "react": "^18",
     "react-dom": "^18",
-    "tailwind-merge": "^3.7.0"
+    "tailwind-merge": "^3.7.0",
+    "web-push": "^4.0.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/web-push": "^3.6.4",
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
     "postcss": "^8",

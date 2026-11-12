@@ -22,21 +22,24 @@ enum CourseLevel {
 }
 
 model User {
-  id             String           @id @default(cuid())
-  name           String
-  email          String           @unique
-  password       String
-  role           Role             @default(MURID)
-  avatar         String?
-  bio            String?          @db.Text
-  headline       String?
-  createdCourses Course[]         @relation("InstructorCourses")
-  enrollments    Enrollment[]
-  reviews        Review[]
-  lessonProgress LessonProgress[]
-  certificates   Certificate[]
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  id                String             @id @default(cuid())
+  authUserId        String?            @unique @map("authUserId")
+  name              String
+  email             String             @unique
+  password          String?
+  role              Role               @default(MURID)
+  avatar            String?
+  bio               String?            @db.Text
+  headline          String?
+  createdCourses    Course[]           @relation("InstructorCourses")
+  enrollments       Enrollment[]
+  reviews           Review[]
+  lessonProgress    LessonProgress[]
+  certificates      Certificate[]
+  quizAttempts      QuizAttempt[]
+  pushSubscriptions PushSubscription[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 }
 
 model Category {
@@ -67,6 +70,7 @@ model Course {
   categoryId   String?
   category     Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   sections     Section[]
+  quizzes      Quiz[]
   enrollments  Enrollment[]
   reviews      Review[]
   certificates Certificate[]
@@ -99,6 +103,68 @@ model Lesson {
   progress    LessonProgress[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+}
+
+model Quiz {
+  id           String        @id @default(cuid())
+  title        String
+  description  String?       @db.Text
+  passingScore Int           @default(70)
+  courseId     String
+  course       Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  questions    Question[]
+  attempts     QuizAttempt[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Question {
+  id          String       @id @default(cuid())
+  quizId      String
+  quiz        Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  text        String       @db.Text
+  explanation String?      @db.Text
+  order       Int          @default(0)
+  weight      Int          @default(1)
+  options     Option[]
+  answers     QuizAnswer[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Option {
+  id         String   @id @default(cuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  text       String
+  isCorrect  Boolean  @default(false)
+  answers    QuizAnswer[]
+
+  @@unique([id, questionId])
+}
+
+model QuizAttempt {
+  id        String       @id @default(cuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quizId    String
+  quiz      Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  score     Float // 0 to 100
+  isPassed  Boolean      @default(false)
+  answers   QuizAnswer[]
+  createdAt DateTime     @default(now())
+}
+
+model QuizAnswer {
+  id               String      @id @default(cuid())
+  attemptId        String
+  attempt          QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId       String
+  question         Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOptionId String
+  selectedOption   Option      @relation(fields: [selectedOptionId, questionId], references: [id, questionId], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
 }
 
 model Enrollment {
@@ -152,3 +218,27 @@ model Certificate {
   @@unique([userId, courseId])
 }
 
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+}
+
+model NotificationQueue {
+  id           String    @id @default(cuid())
+  title        String
+  body         String
+  url          String?
+  targetUserId String?
+  status       String    @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  attempts     Int       @default(0)
+  maxAttempts  Int       @default(3)
+  lastError    String?   @db.Text
+  createdAt    DateTime  @default(now())
+  availableAt  DateTime  @default(now())
+  processedAt  DateTime?
+}

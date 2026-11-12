@@ -52,14 +52,31 @@ export async function POST(
     }
 
     // Create new enrollment
-    const newEnrollment = await prisma.enrollment.create({
-      data: {
-        userId: user.id,
-        courseId: course.id,
-        progress: 0,
-        isCompleted: false,
-      },
-    });
+    let newEnrollment;
+    try {
+      newEnrollment = await prisma.enrollment.create({
+        data: { userId: user.id, courseId: course.id, progress: 0, isCompleted: false },
+      });
+    } catch (error) {
+      if ((error as { code?: string }).code !== "P2002") throw error;
+      const enrollment = await prisma.enrollment.findUnique({
+        where: { userId_courseId: { userId: user.id, courseId: course.id } },
+      });
+      return NextResponse.json({ message: "Anda sudah terdaftar di kursus ini.", enrollment });
+    }
+
+    try {
+      await prisma.notificationQueue.create({
+        data: {
+          title: "Peserta baru mendaftar",
+          body: `${user.name} mendaftar ke kursus "${course.title}".`,
+          url: "/pengajar/dashboard",
+          targetUserId: course.instructorId,
+        },
+      });
+    } catch (notificationError) {
+      console.error("Enrollment notification enqueue failed:", notificationError);
+    }
 
     return NextResponse.json(
       {

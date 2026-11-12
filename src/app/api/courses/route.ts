@@ -1,9 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { z } from "zod";
+
+// LAPIS 1: Validasi Zod Schema
+const CreateCourseSchema = z.object({
+  title: z
+    .string()
+    .min(5, "Judul minimal 5 karakter")
+    .max(200, "Judul maksimal 200 karakter"),
+  subtitle: z.string().max(300).optional(),
+  description: z
+    .string()
+    .min(20, "Deskripsi minimal 20 karakter"),
+  categoryId: z.string().optional().nullable(),
+  level: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED", "ALL_LEVELS"]).default("BEGINNER"),
+  price: z.number().min(0, "Harga tidak boleh negatif").default(0),
+  thumbnail: z.string().url("URL thumbnail tidak valid").optional().nullable(),
+  requirements: z.string().optional().nullable(),
+  objectives: z.string().optional().nullable(),
+});
 
 export async function POST(req: NextRequest) {
   try {
+    // LAPIS 2: Validasi otorisasi (role)
     const user = await getCurrentUser();
     if (!user || (user.role !== "PENGAJAR" && user.role !== "ADMIN")) {
       return NextResponse.json(
@@ -12,26 +32,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const {
-      title,
-      subtitle,
-      description,
-      categoryId,
-      level,
-      price,
-      thumbnail,
-      requirements,
-      objectives,
-    } = await req.json();
+    const body = await req.json();
 
-    if (!title || !description) {
+    // LAPIS 1: Validasi Zod
+    const parsed = CreateCourseSchema.safeParse({
+      ...body,
+      price: typeof body.price === "string" ? parseFloat(body.price) : body.price,
+    });
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Judul dan deskripsi kursus wajib diisi." },
+        {
+          error: "Validasi gagal",
+          details: parsed.error.flatten().fieldErrors,
+        },
         { status: 400 }
       );
     }
 
-    // Generate unique slug
+    const { title, subtitle, description, categoryId, level, price, thumbnail, requirements, objectives } =
+      parsed.data;
+
+    // LAPIS 3: Validasi bisnis — generate slug unik
     const baseSlug = title
       .toLowerCase()
       .trim()
@@ -54,7 +75,7 @@ export async function POST(req: NextRequest) {
         description,
         categoryId: categoryId || null,
         level: level || "BEGINNER",
-        price: parseFloat(price) || 0,
+        price: price ?? 0,
         thumbnail:
           thumbnail ||
           "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1000&auto=format&fit=crop&q=80",
@@ -66,7 +87,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(course, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Create course error:", error);
     return NextResponse.json(
       { error: "Gagal membuat kursus baru." },
@@ -74,4 +95,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

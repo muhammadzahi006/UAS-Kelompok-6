@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { useState } from "react";
 import {
   GraduationCap,
@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 export default function Navbar() {
-  const { data: session } = useSession();
+  const { user, signOut } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -32,7 +32,7 @@ export default function Navbar() {
     }
   };
 
-  const userRole = session?.user?.role;
+  const userRole = user?.role;
 
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
@@ -87,7 +87,7 @@ export default function Navbar() {
 
           {/* Navigation Links based on Role */}
           <div className="hidden md:flex items-center gap-3">
-            {session ? (
+            {user ? (
               <>
                 {/* Murid links */}
                 {userRole === "MURID" && (
@@ -140,10 +140,10 @@ export default function Navbar() {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={
-                        session.user?.image ||
-                        `https://api.dicebear.com/7.x/avataaars/svg?seed=${session.user?.name}`
+                        user.image ||
+                        `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`
                       }
-                      alt={session.user?.name || "User"}
+                      alt={user.name || "User"}
                       className="w-9 h-9 rounded-full object-cover border border-slate-200"
                     />
                   </button>
@@ -155,10 +155,10 @@ export default function Navbar() {
                     >
                       <div className="px-4 py-3 border-b border-slate-100">
                         <p className="text-sm font-semibold text-slate-800 truncate">
-                          {session.user?.name}
+                          {user.name}
                         </p>
                         <p className="text-xs text-slate-500 truncate">
-                          {session.user?.email}
+                          {user.email}
                         </p>
                         <span
                           className={`mt-2 inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold tracking-wide uppercase ${
@@ -210,7 +210,7 @@ export default function Navbar() {
                         <button
                           onClick={() => {
                             setIsProfileMenuOpen(false);
-                            signOut({ callbackUrl: "/" });
+                            void signOut().then(() => router.push("/"));
                           }}
                           className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                         >
@@ -280,10 +280,10 @@ export default function Navbar() {
             Jelajahi Katalog Kursus
           </Link>
 
-          {session ? (
+          {user ? (
             <div className="border-t border-slate-200 pt-3 space-y-2">
               <div className="text-xs text-slate-500 font-medium">
-                Masuk sebagai {session.user?.name} ({userRole})
+                Masuk sebagai {user.name} ({userRole})
               </div>
               {userRole === "MURID" && (
                 <Link
@@ -324,7 +324,7 @@ export default function Navbar() {
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);
-                  signOut({ callbackUrl: "/" });
+                  void signOut().then(() => router.push("/"));
                 }}
                 className="block w-full text-left py-2 text-sm text-red-600 font-medium"
               >
