@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, Suspense } from "react";
 import { createClient } from "@/lib/supabase/browser";
