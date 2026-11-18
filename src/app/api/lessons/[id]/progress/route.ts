@@ -94,40 +94,24 @@ export async function POST(
       },
     });
 
-    // If completed and no certificate yet, generate certificate
-    let certificate = null;
-    if (isCourseCompleted) {
-      const existingCert = await prisma.certificate.findUnique({
-        where: {
-          userId_courseId: {
-            userId: user.id,
-            courseId,
-          },
+    // Peraturan Baru: Sertifikat HANYA dikeluarkan melalui Kuis dengan nilai >= 75%
+    // Di sini hanya mengembalikan sertifikat jika sudah pernah didapatkan dari kuis sebelumnya.
+    const existingCert = await prisma.certificate.findUnique({
+      where: {
+        userId_courseId: {
+          userId: user.id,
+          courseId,
         },
-      });
-
-      if (!existingCert) {
-        const certCode = `COURSERA-${Date.now().toString(36).toUpperCase()}-${Math.floor(
-          1000 + Math.random() * 9000
-        )}`;
-        certificate = await prisma.certificate.create({
-          data: {
-            userId: user.id,
-            courseId,
-            certificateCode: certCode,
-          },
-        });
-      } else {
-        certificate = existingCert;
-      }
-    }
+      },
+    });
 
     return NextResponse.json({
       success: true,
       lessonProgress: progressRecord,
       courseProgress: progressPercentage,
       isCourseCompleted,
-      certificateCode: certificate?.certificateCode || null,
+      certificateCode: existingCert?.certificateCode || null,
+      quizRequiredForCertificate: true,
     });
   } catch (error: any) {
     console.error("Lesson progress error:", error);
@@ -137,4 +121,3 @@ export async function POST(
     );
   }
 }
-

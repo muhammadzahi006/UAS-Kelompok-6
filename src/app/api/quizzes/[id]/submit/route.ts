@@ -42,6 +42,9 @@ export async function POST(
         questions: {
           include: { options: true },
         },
+        course: {
+          select: { id: true, title: true },
+        },
       },
     });
 
@@ -52,13 +55,21 @@ export async function POST(
     const enrollment = await prisma.enrollment.findUnique({
       where: { userId_courseId: { userId: user.id, courseId: quiz.courseId } },
     });
-    if (!enrollment) return NextResponse.json({ error: "Anda belum terdaftar di kursus ini" }, { status: 403 });
+    if (!enrollment) {
+      return NextResponse.json({ error: "Anda belum terdaftar di kursus ini" }, { status: 403 });
+    }
 
     const expectedIds = new Set(quiz.questions.map((question) => question.id));
-    if (answers.length !== expectedIds.size || new Set(answers.map((answer) => answer.questionId)).size !== answers.length || answers.some((answer) => !expectedIds.has(answer.questionId))) {
+    if (
+      answers.length !== expectedIds.size ||
+      new Set(answers.map((answer) => answer.questionId)).size !== answers.length ||
+      answers.some((answer) => !expectedIds.has(answer.questionId))
+    ) {
       return NextResponse.json({ error: "Jawab setiap soal tepat satu kali" }, { status: 400 });
     }
-    if (quiz.questions.length === 0) return NextResponse.json({ error: "Kuis belum memiliki soal" }, { status: 400 });
+    if (quiz.questions.length === 0) {
+      return NextResponse.json({ error: "Kuis belum memiliki soal" }, { status: 400 });
+    }
 
     let correctCount = 0;
     let earnedWeight = 0;
@@ -78,7 +89,8 @@ export async function POST(
     }
 
     const score = totalWeight > 0 ? (earnedWeight / totalWeight) * 100 : 0;
-    const isPassed = score >= quiz.passingScore;
+    // Passing grade minimal 75%
+    const isPassed = score >= Math.max(quiz.passingScore, 75);
 
     // Simpan QuizAttempt + QuizAnswer
     const attempt = await prisma.quizAttempt.create({
@@ -106,13 +118,61 @@ export async function POST(
       },
     });
 
-    // Enqueue push notification
+    // Syarat kelulusan: Jika nilai >= 75%, terbitkan sertifikat resmi!
+    let certificate = null;
+    if (isPassed) {
+      const existingCert = await prisma.certificate.findUnique({
+        where: {
+          userId_courseId: {
+            userId: user.id,
+            courseId: quiz.courseId,
+          },
+        },
+      });
+
+      if (!existingCert) {
+        const certCode = `EDUVIBE-${Date.now().toString(36).toUpperCase()}-${Math.floor(
+          1000 + Math.random() * 9000
+        )}`;
+        certificate = await prisma.certificate.create({
+          data: {
+            userId: user.id,
+            courseId: quiz.courseId,
+            certificateCode: certCode,
+          },
+        });
+      } else {
+        certificate = existingCert;
+      }
+
+      // Tandai juga enrollment selesai jika belum
+      await prisma.enrollment.update({
+        where: {
+          userId_courseId: {
+            userId: user.id,
+            courseId: quiz.courseId,
+          },
+        },
+        data: {
+          isCompleted: true,
+          completedAt: new Date(),
+        },
+      });
+    }
+
+    // Enqueue notification
     try {
       await prisma.notificationQueue.create({
         data: {
-          title: isPassed ? "🎉 Selamat! Anda Lulus Kuis!" : "📝 Hasil Kuis Tersedia",
-          body: `Nilai Anda: ${Math.round(score)}% pada kuis "${quiz.title}". ${isPassed ? "Lulus!" : "Belum lulus, coba lagi!"}`,
-          url: `/murid/dashboard`,
+          title: isPassed
+            ? "🎉 Selamat! Anda Lulus Kuis & Meraih Sertifikat!"
+            : "📝 Hasil Kuis Tersedia",
+          body: `Nilai Anda: ${Math.round(score)}% pada kuis "${quiz.title}". ${
+            isPassed
+              ? "Lulus dengan predikat memuaskan! Sertifikat telah diterbitkan."
+              : "Nilai minimum kelulusan adalah 75%. Pelajari kembali materi dan coba lagi!"
+          }`,
+          url: isPassed && certificate ? `/certificate/${certificate.certificateCode}` : `/murid/dashboard`,
           targetUserId: user.id,
           status: "PENDING",
         },
@@ -126,8 +186,9 @@ export async function POST(
       isPassed,
       correctCount,
       totalQuestions: quiz.questions.length,
-      passingScore: quiz.passingScore,
+      passingScore: Math.max(quiz.passingScore, 75),
       attemptId: attempt.id,
+      certificateCode: certificate?.certificateCode || null,
     });
   } catch (error) {
     console.error("POST /api/quizzes/[id]/submit error:", error);

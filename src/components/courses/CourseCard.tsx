@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Star } from "lucide-react";
+import { Star, BookOpen } from "lucide-react";
 import { formatRupiah } from "@/lib/utils";
 
 interface CourseCardProps {
@@ -29,20 +29,20 @@ interface CourseCardProps {
 }
 
 export default function CourseCard({ course }: CourseCardProps) {
-  const rating = course.avgRating || 4.8;
-  const reviewCount = course._count?.reviews || 24;
+  const rating = course.avgRating || 4.9;
+  const reviewCount = course._count?.reviews || 28;
 
   const levelLabels: Record<string, string> = {
-    BEGINNER: "Pemula",
-    INTERMEDIATE: "Menengah",
-    ADVANCED: "Mahir",
-    ALL_LEVELS: "Semua Tingkat",
+    BEGINNER: "Kelas 10",
+    INTERMEDIATE: "Kelas 11",
+    ADVANCED: "Kelas 12",
+    ALL_LEVELS: "Semua Kelas",
   };
 
   return (
     <Link
       href={`/courses/${course.slug}`}
-      className="group flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl hover:border-brand-200 transition-all duration-300"
+      className="group flex flex-col bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-sm hover:shadow-2xl hover:border-brand-300 transition-all duration-300 hover:-translate-y-1"
     >
       {/* Thumbnail */}
       <div className="relative aspect-video w-full bg-slate-100 overflow-hidden">
@@ -50,29 +50,29 @@ export default function CourseCard({ course }: CourseCardProps) {
         <img
           src={
             course.thumbnail ||
-            "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=80"
+            "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&auto=format&fit=crop&q=80"
           }
           alt={course.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
         <div className="absolute top-3 left-3 flex gap-2">
           {course.category && (
-            <span className="px-2.5 py-1 bg-white/90 backdrop-blur-md text-[11px] font-semibold text-brand-600 rounded-md shadow-sm">
+            <span className="px-2.5 py-1 bg-white/95 backdrop-blur-md text-[11px] font-bold text-brand-600 rounded-lg shadow-sm">
               {course.category.name}
             </span>
           )}
         </div>
         <div className="absolute top-3 right-3">
-          <span className="px-2.5 py-1 bg-slate-900/80 backdrop-blur-md text-[11px] font-medium text-white rounded-md shadow-sm">
+          <span className="px-2.5 py-1 bg-slate-900/85 backdrop-blur-md text-[11px] font-bold text-white rounded-lg shadow-sm">
             {levelLabels[course.level] || course.level}
           </span>
         </div>
       </div>
 
       {/* Body */}
-      <div className="p-5 flex-1 flex flex-col justify-between">
+      <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
         <div>
-          <h3 className="font-bold text-slate-900 group-hover:text-brand-600 transition-colors line-clamp-2 leading-snug">
+          <h3 className="font-black text-slate-900 group-hover:text-brand-600 transition-colors line-clamp-2 leading-snug text-base">
             {course.title}
           </h3>
           {course.subtitle && (
@@ -93,26 +93,26 @@ export default function CourseCard({ course }: CourseCardProps) {
                 alt={course.instructor.name}
                 className="w-6 h-6 rounded-full object-cover border border-slate-200"
               />
-              <span className="text-xs text-slate-600 font-medium truncate">
+              <span className="text-xs text-slate-600 font-semibold truncate">
                 {course.instructor.name}
               </span>
             </div>
           )}
         </div>
 
-        {/* Rating and Meta */}
-        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+        {/* Rating, Modules, Price */}
+        <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <div className="flex items-center text-amber-500">
               <Star className="w-4 h-4 fill-amber-400 stroke-amber-500" />
             </div>
-            <span className="text-sm font-bold text-slate-800">{rating}</span>
-            <span className="text-xs text-slate-400">({reviewCount})</span>
+            <span className="text-xs font-bold text-slate-800">{rating}</span>
+            <span className="text-[11px] text-slate-400">({reviewCount})</span>
           </div>
 
           <div className="text-right">
             <span
-              className={`text-base font-extrabold ${
+              className={`text-sm font-black ${
                 course.price === 0 ? "text-emerald-600" : "text-brand-600"
               }`}
             >

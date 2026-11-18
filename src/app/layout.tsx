@@ -5,9 +5,9 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
-  title: "CourseraID - Platform Online Course & Sertifikasi Cloud",
+  title: "Eduvibe - Platform Kursus & Pembelajaran Matematika SMA Terpadu",
   description:
-    "Belajar keterampilan teknologi paling diminati dari instruktur terbaik. Dibangun dengan Next.js, Supabase PostgreSQL, dan Cloudflare R2.",
+    "Kuasai matematika SMA mulai dari Aljabar, Geometri, Trigonometri, Kalkulus, hingga Statistika bersama pendidik berpengalaman di Eduvibe.",
 };
 
 export default function RootLayout({
@@ -17,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
-      <body className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+      <body className="min-h-screen flex flex-col bg-slate-50 text-slate-900 antialiased selection:bg-brand-500 selection:text-white">
         <AuthProvider>
           <Navbar />
           <main className="flex-1">{children}</main>

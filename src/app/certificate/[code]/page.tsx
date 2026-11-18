@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
-import { GraduationCap, Award, ArrowLeft, ShieldCheck } from "lucide-react";
+import { Award, ArrowLeft, ShieldCheck, CheckCircle2 } from "lucide-react";
 import PrintButton from "@/components/certificate/PrintButton";
+import EduvibeLogo from "@/components/layout/EduvibeLogo";
 
 interface CertificatePageProps {
   params: {
@@ -40,50 +41,48 @@ export default async function CertificatePage({ params }: CertificatePageProps) 
         <div className="flex items-center justify-between no-print">
           <Link
             href="/murid/dashboard"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 transition-all hover:scale-[1.02] active:scale-95"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Kembali ke Dashboard</span>
+            <span>Kembali ke Dashboard Siswa</span>
           </Link>
 
           <PrintButton />
         </div>
 
         {/* Certificate Card (Paper Style) */}
-        <div className="relative bg-white p-10 sm:p-16 rounded-3xl border-8 border-slate-200/80 shadow-2xl overflow-hidden print:border-none print:shadow-none print:m-0 print:p-8">
+        <div className="relative bg-white p-10 sm:p-16 rounded-3xl border-8 border-slate-200/90 shadow-2xl overflow-hidden print:border-none print:shadow-none print:m-0 print:p-8">
           {/* Decorative Corner Borders */}
-          <div className="absolute top-4 left-4 w-12 h-12 border-t-2 border-l-2 border-brand-500"></div>
-          <div className="absolute top-4 right-4 w-12 h-12 border-t-2 border-r-2 border-brand-500"></div>
-          <div className="absolute bottom-4 left-4 w-12 h-12 border-b-2 border-l-2 border-brand-500"></div>
-          <div className="absolute bottom-4 right-4 w-12 h-12 border-b-2 border-r-2 border-brand-500"></div>
+          <div className="absolute top-4 left-4 w-12 h-12 border-t-4 border-l-4 border-brand-500 rounded-tl-lg"></div>
+          <div className="absolute top-4 right-4 w-12 h-12 border-t-4 border-r-4 border-brand-500 rounded-tr-lg"></div>
+          <div className="absolute bottom-4 left-4 w-12 h-12 border-b-4 border-l-4 border-brand-500 rounded-bl-lg"></div>
+          <div className="absolute bottom-4 right-4 w-12 h-12 border-b-4 border-r-4 border-brand-500 rounded-br-lg"></div>
 
           {/* Certificate Content */}
           <div className="text-center space-y-8 relative z-10">
             {/* Header / Logo */}
-            <div className="flex items-center justify-center gap-2">
-              <div className="w-12 h-12 rounded-2xl bg-brand-500 text-white flex items-center justify-center shadow-md">
-                <GraduationCap className="w-7 h-7" />
-              </div>
-              <span className="text-2xl font-black tracking-tight text-slate-900">
-                Coursera<span className="text-brand-500">ID</span>
+            <div className="flex items-center justify-center gap-2.5">
+              <EduvibeLogo size={42} />
+              <span className="text-3xl font-black tracking-tight text-slate-900">
+                Edu<span className="text-brand-500">vibe</span>
               </span>
             </div>
 
             <div>
-              <p className="text-xs uppercase tracking-[0.3em] font-bold text-brand-600 mb-2">
-                Sertifikat Kelulusan Resmi
+              <p className="text-xs uppercase tracking-[0.3em] font-extrabold text-brand-600 mb-2">
+                Sertifikat Kelulusan & Kompetensi Matematika SMA
               </p>
               <h1 className="text-3xl sm:text-4xl font-serif font-black text-slate-900 tracking-tight">
-                Certificate of Completion
+                Certificate of Academic Excellence
               </h1>
             </div>
 
             {/* Recipient */}
             <div className="space-y-2 py-4">
               <p className="text-xs text-slate-500 font-medium">
-                Diberikan dengan bangga kepada:
+                Diberikan dengan hormat dan bangga kepada:
               </p>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-brand-700 underline decoration-brand-200 decoration-2 underline-offset-8">
+              <h2 className="text-3xl sm:text-4xl font-black text-brand-700 underline decoration-brand-200 decoration-4 underline-offset-8">
                 {certificate.user.name}
               </h2>
             </div>
@@ -91,7 +90,7 @@ export default async function CertificatePage({ params }: CertificatePageProps) 
             {/* Course Details */}
             <div className="max-w-xl mx-auto space-y-2">
               <p className="text-xs text-slate-500">
-                Telah berhasil menyelesaikan seluruh modul kurikulum, evaluasi praktik, dan materi pembelajaran pada kursus online:
+                Telah berhasil mempelajari seluruh materi dan lulus Ujian Evaluasi Kuis Matematika dengan capaian nilai di atas ambang batas kelulusan (passing grade minimal 75%) pada kursus:
               </p>
               <h3 className="text-xl sm:text-2xl font-bold text-slate-900 leading-snug">
                 {certificate.course.title}
@@ -108,7 +107,7 @@ export default async function CertificatePage({ params }: CertificatePageProps) 
                 <p className="text-xs font-bold text-slate-800">
                   {certificate.course.instructor.name}
                 </p>
-                <p className="text-[10px] text-slate-500">Instruktur Resmi</p>
+                <p className="text-[10px] text-slate-500">Guru / Pengampu Materi</p>
               </div>
 
               {/* Gold Seal */}
@@ -117,7 +116,7 @@ export default async function CertificatePage({ params }: CertificatePageProps) 
                   <Award className="w-8 h-8 text-amber-950" />
                 </div>
                 <span className="text-[10px] font-bold text-amber-700 mt-2 uppercase tracking-wider">
-                  Verified Honors
+                  Terverifikasi Lulus Kuis
                 </span>
               </div>
 
@@ -132,16 +131,16 @@ export default async function CertificatePage({ params }: CertificatePageProps) 
                 </div>
                 <p className="text-xs font-bold text-slate-800">Tanggal Kelulusan</p>
                 <p className="text-[10px] text-slate-500 font-mono">
-                  Kode: {certificate.certificateCode}
+                  No. Sertifikat: {certificate.certificateCode}
                 </p>
               </div>
             </div>
 
             {/* Verification Footer */}
             <div className="pt-6 flex items-center justify-center gap-2 text-[11px] text-slate-400">
-              <ShieldCheck className="w-4 h-4 text-emerald-500" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
               <span>
-                Sertifikat ini sah dan terdaftar resmi di basis data Supabase PostgreSQL CourseraID.
+                Sertifikat ini sah dan tercatat resmi dalam sistem basis data Eduvibe.
               </span>
             </div>
           </div>
@@ -150,4 +149,3 @@ export default async function CertificatePage({ params }: CertificatePageProps) 
     </div>
   );
 }
-
